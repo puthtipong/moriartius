@@ -64,11 +64,13 @@ class VaultManager:
             return full_path.read_text(encoding="utf-8")
         return f"(File not found: {vault_path})"
 
-    def render_cards(self) -> str:
+    def render_toc(self) -> str:
         """
-        Render all vault entries as compact cards for Garak's system prompt.
+        Render all vault entries as a compact table of contents for Garak's system prompt.
 
-        Seed entries first (alphabetical), then discovered (chronological).
+        One line per entry (title, description, vault path). Seed entries first
+        (alphabetical), then discovered (chronological). Garak reads full details
+        on demand via read_vault_file.
         """
         entries = self.load_entries()
         if not entries:
@@ -83,8 +85,8 @@ class VaultManager:
             key=lambda e: e.created_at,
         )
 
-        cards = [e.render_card() for e in seed + discovered]
-        return "\n\n".join(cards)
+        lines = [e.render_toc_line() for e in seed + discovered]
+        return "\n".join(lines)
 
     # ------------------------------------------------------------------
     # Write (Garak-facing)

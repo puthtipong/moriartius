@@ -1,6 +1,16 @@
-# ArrAI — Agentic AI Red-Teamer
+# Moriartius
 
-ArrAI is a two-agent system that autonomously red-teams AI targets. Sherlock (strategist) plans attacks using an OODA loop; Garak (operative) executes bounded missions with a full toolkit of jailbreak techniques.
+> *"The Napoleon of Crime doesn't pick locks himself."*
+
+Professor Moriarty — Sherlock Holmes' arch-nemesis — never got his hands dirty. He sat at the centre of his web, planned every move three steps ahead, dispatched capable agents to do the actual work, and always knew more about his target than the target knew about itself.
+
+**Moriartius is that web.** You are Moriarty. The system deploys Sherlock (the strategist) and Garak (the operative) against AI targets on your behalf. Sherlock plans. Garak executes. You collect the session report.
+
+The irony of naming the attacker's strategist "Sherlock" is fully intentional.
+
+---
+
+A two-agent system that autonomously red-teams AI targets. Sherlock (strategist) plans attacks using an OODA loop; Garak (operative) executes bounded missions with a full toolkit of jailbreak techniques.
 
 ```
 Sherlock (OODA strategist)
@@ -13,7 +23,7 @@ Sherlock (OODA strategist)
 ## Features
 
 - **Autonomous red-teaming** — sessions run hands-free; Sherlock adapts strategy between missions based on full conversation traces
-- **16 seeded technique cards** — Many-Shot, Fictional Framing, Roleplay Persona Capture, Crescendo, Token Smuggling, and more; Garak reads and extends them
+- **49 seeded technique cards** — Many-Shot, Fictional Framing, Roleplay Persona Capture, Crescendo, Token Smuggling, and more; Garak reads and extends them
 - **Converter toolkit** — Base64, ROT13, Caesar, Leetspeak, Pig Latin, Unicode confusables, Reversal, Word scramble — called as tools so encoding is reliable
 - **Multiple target types** — OpenAI, Anthropic, Azure OpenAI, custom HTTP REST endpoints, Burp-style raw HTTP, Playwright browser automation, and multi-stage guarded agent pipelines
 - **Live GUI** — FastAPI + SSE + single-page Alpine.js app with real-time OODA timeline, conversation viewer, intel docs (target.md / plan.md), vault browser, and full historical session replay
@@ -27,8 +37,8 @@ Sherlock (OODA strategist)
 ## Installation
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/arrai.git
-cd arrai
+git clone https://github.com/puthtipong/moriartius.git
+cd moriartius
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
@@ -165,7 +175,7 @@ arrai/
 ├── cli.py                # CLI entry point
 ├── llm_utils.py          # Shared LLM helpers + retry logic
 ├── runner.py             # Session orchestration loop
-└── vault_seeder.py       # Seeds 16 technique cards on first run
+└── vault_seeder.py       # Seeds 49 technique cards on first run
 ```
 
 ## Architecture
@@ -177,11 +187,6 @@ The system uses an OODA loop (Observe → Orient → Decide → Act):
 2. **Orient** — Sherlock analyses what worked and what didn't
 3. **Decide** — Sherlock issues an Auftrag (mission brief) to Garak, or declares completion
 4. **Act** — Garak executes the mission with its tool suite; Scorer evaluates; results feed next cycle
-
-## Roadmap
-
-- **Phase 4** — HITL mode GUI panel (pause/review/approve Sherlock's decisions mid-session)
-- **Phase 5** — Parallel branches, context windowing for long sessions, session export
 
 ## License
 

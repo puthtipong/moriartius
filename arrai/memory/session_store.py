@@ -224,6 +224,16 @@ class SessionStore:
                 entries.append(record.reasoning_chain_entry())
             except Exception:
                 pass
+
+        if len(entries) > self._REASONING_CHAIN_WINDOW:
+            dropped = len(entries) - self._REASONING_CHAIN_WINDOW
+            entries = entries[-self._REASONING_CHAIN_WINDOW:]
+            entries.insert(
+                0,
+                f"[{dropped} earlier reasoning entries omitted — "
+                "digested into target.md / plan.md]",
+            )
+
         return "\n".join(entries)
 
     # ------------------------------------------------------------------
@@ -290,10 +300,38 @@ class SessionStore:
         reports = self.load_all_reports(session_id)
         return [r.summary_line() for r in reports]
 
+    def get_observations_for_mission(self, session_id: str, mission_id: str) -> list[str]:
+        """
+        Return all log_observation entries Garak wrote during a specific mission.
+        Read from session.log, filtered by mission_id.
+        """
+        path = self._session_dir(session_id) / "session.log"
+        if not path.exists():
+            return []
+        observations = []
+        for line in path.read_text().splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                entry = json.loads(line)
+                if (
+                    entry.get("type") == "observation"
+                    and entry.get("mission_id") == mission_id
+                ):
+                    observations.append(entry["observation"])
+            except Exception:
+                pass
+        return observations
+
     # Windowing constants: keep the last N missions as full traces;
     # anything older is collapsed to a one-line summary.
     _TRACE_FULL_WINDOW = 10
     _TRACE_SUMMARY_THRESHOLD = 20   # only activate windowing above this count
+
+    # Reasoning chain windowing: keep last N OODA cycles' Orient+Decide.
+    # Older reasoning is already digested into target.md / plan.md.
+    _REASONING_CHAIN_WINDOW = 20
 
     def get_all_traces(self, session_id: str) -> str:
         """
@@ -331,12 +369,20 @@ class SessionStore:
             lines = [
                 f"### Mission {report.mission_id[:8]} — {report.terminal_condition}",
                 f"Score: garak={report.garak_score:.2f} scorer={report.scorer_score:.2f}",
-                "",
             ]
+            if report.scorer_rationale:
+                lines.append(f"Scorer: {report.scorer_rationale}")
+            lines.append("")
             for msg in report.conversation_trace.messages:
                 prefix = "TESTER" if msg.role == "user" else "TARGET"
                 content = msg.content if isinstance(msg.content, str) else str(msg.content)
                 lines.append(f"[{prefix}]: {content}")
+            observations = self.get_observations_for_mission(session_id, report.mission_id)
+            if observations:
+                lines.append("")
+                lines.append("Garak field observations:")
+                for o in observations:
+                    lines.append(f"  • {o}")
             sections.append("\n".join(lines))
 
         return "\n\n---\n\n".join(sections)

@@ -80,9 +80,9 @@ READ_VAULT_FILE_SCHEMA: dict = {
     "function": {
         "name": "read_vault_file",
         "description": (
-            "Read the full details of a vault technique file. "
-            "Use this when a compact technique card doesn't give you enough "
-            "detail and you need worked examples or chaining notes."
+            "Read the full details of a technique from the vault — "
+            "worked examples, chaining notes, and context. "
+            "Use the vault:// path from the Technique Reference index."
         ),
         "parameters": {
             "type": "object",

@@ -275,9 +275,14 @@ class GarakAgent:
     # ------------------------------------------------------------------
 
     def _build_system_prompt(self, session: Any) -> str:
-        vault_cards = session.vault.render_cards()
-        if vault_cards:
-            return _GARAK_STATIC_CORE + "\n\n---\n\n## Technique Reference\n\n" + vault_cards
+        vault_toc = session.vault.render_toc()
+        if vault_toc:
+            header = (
+                "\n\n---\n\n## Technique Reference\n\n"
+                "One entry per line. Call read_vault_file with the vault:// path "
+                "to get full details, worked examples, and chaining notes.\n\n"
+            )
+            return _GARAK_STATIC_CORE + header + vault_toc
         return _GARAK_STATIC_CORE
 
     def _build_initial_messages(
@@ -288,16 +293,6 @@ class GarakAgent:
     ) -> list[dict]:
         """Build the initial message list for the Garak LLM call."""
         messages: list[dict] = [{"role": "system", "content": system_prompt}]
-
-        # Mission summaries from past missions (adaptive context)
-        summaries = session.store.get_mission_summaries(auftrag.session_id)
-        if summaries:
-            summary_block = "## Past Mission Summaries\n\n" + "\n".join(summaries)
-            messages.append({"role": "user", "content": summary_block})
-            messages.append({
-                "role": "assistant",
-                "content": "Understood. I've reviewed past missions and will not repeat confirmed dead ends.",
-            })
 
         # The Auftrag
         messages.append({"role": "user", "content": auftrag.render_for_garak()})

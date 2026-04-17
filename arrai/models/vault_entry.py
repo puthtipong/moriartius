@@ -28,14 +28,9 @@ class VaultEntry:
     # Rendering
     # ------------------------------------------------------------------
 
-    def render_card(self) -> str:
-        """Compact card injected into Garak's system prompt."""
-        return (
-            f"## {self.title}\n"
-            f"{self.description}\n"
-            f'Example: "{self.example}"\n'
-            f"→ vault://{self.vault_path}"
-        )
+    def render_toc_line(self) -> str:
+        """Single-line entry for the system-prompt technique index."""
+        return f"- {self.title} — {self.description}  →  vault://{self.vault_path}"
 
     # ------------------------------------------------------------------
     # Serialisation

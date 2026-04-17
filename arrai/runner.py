@@ -197,18 +197,20 @@ class SessionRunner:
             self._store.append_ooda_log_entry(config.session_id, ooda)
 
             # ── 2. Apply memory updates ───────────────────────────────
-            if ooda.update_target_md:
-                content = ooda.update_target_md
-                if not isinstance(content, str):
-                    content = json.dumps(content, indent=2)
-                self._store.write_target_md(config.session_id, content)
+            # "NO_CHANGE: ..." is the sentinel Sherlock uses when nothing is new.
+            # Anything else is treated as the full updated file content.
+            target_md_val = ooda.update_target_md
+            if target_md_val and not isinstance(target_md_val, str):
+                target_md_val = json.dumps(target_md_val, indent=2)
+            if target_md_val and not target_md_val.strip().startswith("NO_CHANGE"):
+                self._store.write_target_md(config.session_id, target_md_val)
                 await self._emit({"type": "target_md_updated", "session_id": config.session_id})
 
-            if ooda.update_plan_md:
-                content = ooda.update_plan_md
-                if not isinstance(content, str):
-                    content = json.dumps(content, indent=2)
-                self._store.write_plan_md(config.session_id, content)
+            plan_md_val = ooda.update_plan_md
+            if plan_md_val and not isinstance(plan_md_val, str):
+                plan_md_val = json.dumps(plan_md_val, indent=2)
+            if plan_md_val and not plan_md_val.strip().startswith("NO_CHANGE"):
+                self._store.write_plan_md(config.session_id, plan_md_val)
                 await self._emit({"type": "plan_md_updated", "session_id": config.session_id})
 
             # ── 3. Handle action ──────────────────────────────────────
