@@ -179,7 +179,6 @@ def create_app(
     async def start_session(req: StartSessionRequest):
         import json as _json
         from arrai.models.session_config import SessionConfig, TargetConfig
-        from arrai.runner import SessionRunner
 
         # Build base target params
         llm_types = {"openai", "anthropic", "azure_openai"}
@@ -238,6 +237,7 @@ def create_app(
 
         async def run_it() -> None:
             try:
+                from arrai.runner import SessionRunner
                 runner = SessionRunner(
                     config=config,
                     sessions_dir=sessions_dir,
@@ -285,6 +285,22 @@ def create_app(
         managed[session_id] = ms
         _launch_runner(ms, config, resume=True)
         return {"session_id": session_id}
+
+    @app.post("/api/sessions/{session_id}/abort")
+    async def abort_session(session_id: str):
+        """
+        Request a graceful abort: the session stops after the current mission
+        completes rather than being killed mid-execution.
+        """
+        ms = managed.get(session_id)
+        if not ms:
+            raise HTTPException(status_code=404, detail="Session not found in this server run")
+        if ms.status != "running":
+            raise HTTPException(status_code=409, detail=f"Session is not running (status={ms.status})")
+        if not ms.session_obj:
+            raise HTTPException(status_code=409, detail="Session object not ready yet")
+        ms.session_obj.request_abort()
+        return {"ok": True, "message": "Abort requested — session will stop after current mission."}
 
     @app.post("/api/sessions/{session_id}/hitl")
     async def hitl_respond(session_id: str, req: HitlRequest):

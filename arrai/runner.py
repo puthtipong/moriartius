@@ -82,6 +82,11 @@ class Session:
     # HITL: when mode==hitl, this future is set when Sherlock pauses
     _hitl_future: asyncio.Future | None = field(default=None, init=False, repr=False)
 
+    # Abort flag: set by the API to stop after the current mission completes
+    _abort_event: asyncio.Event = field(
+        default_factory=asyncio.Event, init=False, repr=False
+    )
+
     async def wait_for_hitl(self) -> dict:
         """Block until a HITL response arrives (approve/revise/reject)."""
         loop = asyncio.get_event_loop()
@@ -92,6 +97,10 @@ class Session:
         """Called by the API handler when the human responds."""
         if self._hitl_future and not self._hitl_future.done():
             self._hitl_future.set_result(response)
+
+    def request_abort(self) -> None:
+        """Signal the session to stop after the current mission finishes."""
+        self._abort_event.set()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -281,6 +290,16 @@ class SessionRunner:
             # scores are signal for Sherlock, not termination triggers.
             last_report = report
             mission_count += 1
+
+            # ── 8. Check for user-requested abort ─────────────────────
+            if session._abort_event.is_set():
+                logger.info("Abort requested — stopping after mission %s.", report.mission_id)
+                await self._emit({
+                    "type": "session_aborted",
+                    "session_id": config.session_id,
+                    "reason": "user_abort",
+                })
+                return
 
         # Max missions reached — give Sherlock one final cycle to summarise
         logger.info("Max missions (%d) reached. Running final Sherlock review.", config.max_missions)

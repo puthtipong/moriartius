@@ -334,16 +334,16 @@ class GarakAgent:
         while llm_step < max_llm_steps:
             llm_step += 1
 
-            # Call Garak LLM
+            # Call Garak LLM.
+            # Note: reasoning_effort is intentionally omitted here — newer models
+            # (gpt-5+) do not support reasoning_effort alongside function tools on
+            # the chat completions endpoint.
             response = await chat_completion_with_retry(
                 self._client,
                 model=self._config.garak_model,
                 messages=messages,
                 tools=self._registry.schemas,
                 tool_choice="auto",
-                extra_body=reasoning_extra_body(
-                    self._config.garak_model, self._config.garak_effort
-                ),
             )
 
             choice = response.choices[0]

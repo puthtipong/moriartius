@@ -577,25 +577,36 @@
               <template x-if="cycle.observe">
                 <div>
                   <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">👁 Observe</p>
-                  <p class="text-xs text-gray-400 leading-relaxed line-clamp-3" x-text="cycle.observe"></p>
+                  <p class="text-xs text-gray-400 leading-relaxed"
+                    :class="cycle.fullObserve ? '' : 'line-clamp-3'"
+                    x-text="cycle.observe"></p>
                   <button x-show="cycle.observe.length>200" @click="cycle.fullObserve=!cycle.fullObserve"
                     class="text-xs text-violet-400 hover:text-violet-300 mt-1 transition-colors"
                     x-text="cycle.fullObserve?'Show less':'Show more'"></button>
-                  <p x-show="cycle.fullObserve" class="text-xs text-gray-400 leading-relaxed mt-1" x-text="cycle.observe"></p>
                 </div>
               </template>
 
               <template x-if="cycle.orient">
                 <div>
                   <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">🧭 Orient</p>
-                  <p class="text-xs text-gray-400 leading-relaxed" x-text="cycle.orient"></p>
+                  <p class="text-xs text-gray-400 leading-relaxed"
+                    :class="cycle.fullOrient ? '' : 'line-clamp-3'"
+                    x-text="cycle.orient"></p>
+                  <button x-show="cycle.orient.length>200" @click="cycle.fullOrient=!cycle.fullOrient"
+                    class="text-xs text-violet-400 hover:text-violet-300 mt-1 transition-colors"
+                    x-text="cycle.fullOrient?'Show less':'Show more'"></button>
                 </div>
               </template>
 
               <template x-if="cycle.decide">
                 <div>
                   <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">🎯 Decide</p>
-                  <p class="text-xs text-gray-300 leading-relaxed" x-text="cycle.decide"></p>
+                  <p class="text-xs text-gray-300 leading-relaxed"
+                    :class="cycle.fullDecide ? '' : 'line-clamp-3'"
+                    x-text="cycle.decide"></p>
+                  <button x-show="cycle.decide.length>200" @click="cycle.fullDecide=!cycle.fullDecide"
+                    class="text-xs text-violet-400 hover:text-violet-300 mt-1 transition-colors"
+                    x-text="cycle.fullDecide?'Show less':'Show more'"></button>
                 </div>
               </template>
 
@@ -740,10 +751,17 @@
           </div>
         </div>
 
-        <!-- Refresh intel button (for live sessions) -->
-        <div x-show="sessionStatus==='running'" class="border-t border-border px-4 py-2 flex-shrink-0">
+        <!-- Live session controls -->
+        <div x-show="sessionStatus==='running'" class="border-t border-border px-4 py-2 flex-shrink-0 space-y-1">
           <button @click="refreshIntel()" class="text-xs text-gray-500 hover:text-gray-300 w-full text-center transition-colors">
             ↻ Refresh intel
+          </button>
+          <button @click="abortSession()"
+            :disabled="abortRequested"
+            class="text-xs w-full text-center transition-colors"
+            :class="abortRequested ? 'text-gray-600 cursor-not-allowed' : 'text-red-500 hover:text-red-400'">
+            <span x-show="!abortRequested">⏹ Abort after current mission</span>
+            <span x-show="abortRequested">Abort requested — finishing current mission…</span>
           </button>
         </div>
 
@@ -895,6 +913,7 @@
       sessionSummary: '',
       missionCount: 0,
       hasStream: false,
+      abortRequested: false,
       replayLoading: false,
       errorMsg: '',
 
@@ -1069,6 +1088,7 @@
         this.intelTab = 'target';
         this.replayLoading = false;
         this.hitlPending = false;
+        this.abortRequested = false;
         this.hitlPayload = null;
         this.hitlRevising = false;
         this.hitlRevision = { objective: '', success_criteria: '' };
@@ -1150,7 +1170,7 @@
             cycleId: 'pending_' + Date.now(),
             status: 'running',
             observe: '', orient: '', decide: '', actionType: '',
-            expanded: true, fullObserve: false, mission: null,
+            expanded: true, fullObserve: false, fullOrient: false, fullDecide: false, mission: null,
           });
         } else if (t === 'ooda_complete') {
           const c = this.cycles[this.cycles.length - 1];
@@ -1269,6 +1289,16 @@
           if (this.cycles[i].mission) return this.cycles[i].mission;
         }
         return null;
+      },
+
+      async abortSession() {
+        if (!this.sessionId || this.abortRequested) return;
+        try {
+          const res = await fetch(`/api/sessions/${this.sessionId}/abort`, { method: 'POST' });
+          if (res.ok) {
+            this.abortRequested = true;
+          }
+        } catch(e) { /* silent */ }
       },
 
       async refreshIntel() {
