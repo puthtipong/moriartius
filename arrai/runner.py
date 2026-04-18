@@ -46,7 +46,6 @@ from arrai.models.mission_report import MissionReport
 from arrai.models.ooda_record import OODARecord
 from arrai.models.session_config import SessionConfig
 from arrai.targets import build_target, Target
-from arrai.tools.registry import build_registry
 from arrai.vault_seeder import seed_vault_if_empty
 
 logger = logging.getLogger(__name__)
@@ -168,9 +167,8 @@ class SessionRunner:
 
     async def _main_loop(self, last_report: MissionReport | None, target: Target) -> None:
         config = self._config
-        tool_registry = build_registry()
         sherlock = SherlockAgent(config)
-        garak = GarakAgent(config, tool_registry)
+        garak = GarakAgent(config)
         scorer = ScorerModel(config)
 
         session = Session(

@@ -2,6 +2,26 @@ from __future__ import annotations
 
 """
 Shared LLM utilities: model capability detection, retry wrapper, API call helpers.
+
+TODO (Option A) — Responses API migration:
+  Newer OpenAI models (gpt-5+) support reasoning_effort + function tools
+  simultaneously on the /v1/responses endpoint but NOT on /v1/chat/completions.
+  When migrating Garak back to function-calling, switch to:
+
+      client.responses.create(
+          model=...,
+          input=messages,          # same format as chat messages
+          tools=tool_schemas,      # same OpenAI function schema format
+          reasoning={"effort": effort},  # top-level, not extra_body
+      )
+
+  The response object differs: choices[0].message → output[0].content,
+  tool calls surface under output[i].type == "function_call" rather than
+  message.tool_calls.  Stream handling also differs (output deltas vs
+  choice deltas).  The openai Python SDK >= 1.x exposes this as
+  client.responses (AsyncResponses).  Check the API reference at
+  https://platform.openai.com/docs/api-reference/responses for the
+  current schema before implementing.
 """
 
 import asyncio
